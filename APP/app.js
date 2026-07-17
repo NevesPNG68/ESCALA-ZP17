@@ -30,4 +30,11 @@ function renderDiffs(){const c=$("#compareCompetence").value,a=$("#versionA").va
 function renderSwapCard(change,pair,reciprocal){const person=r=>`<b>${r.TRIGRAMA}</b><span>${r.NOME_PRATICO||"Nome não publicado"}</span>`,position=r=>`${displayDate(r.DATA)} · ${situationLabel(r.SITUACAO)} · ordem ${r.ORDEM}`;return `<article class="swap-card ${reciprocal?"reciprocal":"substitution"}"><header><div><span>${reciprocal?"POSSÍVEL TROCA RECÍPROCA":"SUBSTITUIÇÃO NA MESMA POSIÇÃO"}</span><strong>${change.oldRow.TRIGRAMA} → ${change.newRow.TRIGRAMA}${pair?` · ${pair.oldRow.TRIGRAMA} → ${pair.newRow.TRIGRAMA}`:""}</strong></div>${reciprocal?"<mark>Correlação automática</mark>":""}</header><div class="swap-flow"><section class="swap-person out"><small>Saiu</small>${person(change.oldRow)}</section><i>→</i><section class="swap-person in"><small>Entrou</small>${person(change.newRow)}</section></div><p>${position(change.oldRow)}</p>${pair?`<div class="swap-flow secondary"><section class="swap-person out"><small>Saiu</small>${person(pair.oldRow)}</section><i>→</i><section class="swap-person in"><small>Entrou</small>${person(pair.newRow)}</section></div><p>${position(pair.oldRow)}</p>`:""}</article>`}
 function renderUnpairedChange(row,label,type){return `<article class="position-change ${type}"><span>${label}</span><strong>${row.TRIGRAMA} · ${row.NOME_PRATICO||"Nome não publicado"}</strong><small>${displayDate(row.DATA)} · ${situationLabel(row.SITUACAO)} · ordem ${row.ORDEM}</small></article>`}
 function exportCsv(){const fields=["DATA","DIA_SEMANA","ORDEM","TRIGRAMA","NOME_PRATICO","SITUACAO","ARQUIVO_ORIGEM"];const q=v=>`"${String(v??"").replaceAll('"','""')}"`;const csv="\uFEFF"+[fields.join(";"),...state.filtered.map(r=>fields.map(f=>q(r[f])).join(";"))].join("\r\n");const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));a.download="escala_zp17_2026_filtrada.csv";a.click();URL.revokeObjectURL(a.href)}
-load();
+if(window.XLSX)load();
+else{
+  window.addEventListener("xlsx-ready",load,{once:true});
+  window.addEventListener("xlsx-error",event=>{
+    $("#status").className="notice error";
+    $("#status").textContent=`Não foi possível iniciar o leitor da planilha: ${event.detail?.message||"erro desconhecido"}.`;
+  },{once:true});
+}
