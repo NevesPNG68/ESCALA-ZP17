@@ -1,0 +1,19 @@
+__pycache__/
+*.pyc
+.DS_Store
+work/node_modules/
+
+# Dados e documentos permanecem somente no computador local.
+ARQUIVOS_CPPR/
+PLANILHA/
+DADOS_PROCESSADOS/
+BACKUP/
+LOGS/
+RELATORIOS/
+work/
+*.xlsx
+*.xls
+*.csv
+*.json
+*.ndjson
+*.pdf

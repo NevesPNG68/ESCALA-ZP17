@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Consulta da Escala Pública ZP-17 de 2026"><title>Escala Pública ZP-17</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="theme-2026.css"></head>
+<body>
+<header><div><span class="eyebrow">CAPITANIA DOS PORTOS DO PARANÁ · 2026</span><h1>Escala Pública ZP-17</h1></div><button id="theme" class="icon" aria-label="Alternar tema"><span class="sun">☀</span><span class="moon">☾</span></button></header>
+<main>
+ <section id="status" class="notice loading">Carregando planilha oficial consolidada…</section>
+ <section class="hero"><div><span>Competência</span><strong id="currentCompetence">—</strong></div><div><span>Versão</span><strong id="currentVersion">—</strong></div><div><span>Publicação</span><strong id="publicationDate">—</strong></div><div><span>Planilha atualizada</span><strong id="updatedAt">—</strong></div></section>
+ <nav class="tabs" aria-label="Seções"><button class="active" data-tab="schedule">Escala</button><button data-tab="history">Histórico</button><button data-tab="compare">Trocas</button></nav>
+ <section id="schedule" class="panel active">
+  <div class="toolbar"><a class="button-link" href="../PLANILHA/Escala_ZP17_2026.xlsx" download>Baixar planilha Excel</a><button id="export">Exportar CSV</button><button onclick="print()">Imprimir</button></div>
+  <div class="filters"><label>Mês da escala<select id="competence"></select></label><label>Versão da publicação<select id="version" title="A versão mais recente é selecionada automaticamente. Escolha outra apenas para consultar uma publicação anterior."></select></label><label>Trigrama<select id="trigram"></select></label><label>Nome<input id="name" placeholder="Preenchido pelo trigrama"></label><label>Situação<select id="situation"></select></label><button id="clear" class="ghost">Limpar</button></div>
+  <section class="daily-roster" aria-label="Resumo da escala"><article class="roster-card service"><div><span id="serviceTitle">PRÁTICOS EM SERVIÇO NO MÊS</span><strong id="serviceCount">0</strong></div><small id="servicePeriod" class="roster-period"></small><div id="servicePeople" class="people-list"></div></article><article class="roster-card standby"><div><span id="standbyTitle">PRÁTICOS EM PRONTIDÃO NO MÊS</span><strong id="standbyCount">0</strong></div><div id="standbyPeople" class="people-list"></div></article></section>
+  <section id="weeklySchedule" class="weekly-section"><div class="weekly-heading"><div><span>Escala da semana</span><strong id="weeklyContext">Quarta a terça-feira</strong></div></div><div id="weeklyDays" class="weekly-grid"></div></section>
+  <div class="table-heading"><div><span>Detalhamento mensal</span><strong id="tableContext">Todos os registros selecionados</strong></div></div><div id="scheduleRows" class="practitioner-grid"></div><p id="count"></p>
+ </section>
+ <section id="history" class="panel"><div id="historyCards" class="history-grid"></div></section>
+ <section id="compare" class="panel"><div class="compare-intro"><span>Relatório automático de trocas</span><strong>Substituições organizadas por mês</strong><p id="automaticCompareContext">O aplicativo compara automaticamente as versões de cada competência.</p><p>“Troca recíproca” é uma conclusão da comparação por data, situação e posição, não uma declaração textual da CPPR.</p></div><div class="compare-controls automatic-controls" aria-hidden="true"><label>Competência<select id="compareCompetence"></select></label><label>Versão anterior<select id="versionA"></select></label><label>Versão nova<select id="versionB"></select></label></div><div id="diffs" class="diff-list"></div></section>
+</main>
+<script src="vendor/xlsx.full.min.js"></script><script src="app.js"></script></body></html>
