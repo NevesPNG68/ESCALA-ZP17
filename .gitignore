@@ -17,3 +17,10 @@ work/
 *.json
 *.ndjson
 *.pdf
+!APP/data/
+!APP/data/*.json
+
+# A planilha mestre pública pode acompanhar o aplicativo web.
+!PLANILHA/
+PLANILHA/*
+!PLANILHA/Escala_ZP17_*.xlsx
