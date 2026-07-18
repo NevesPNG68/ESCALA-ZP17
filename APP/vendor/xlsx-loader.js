@@ -1,6 +1,17 @@
 (async()=>{
   const wait=milliseconds=>new Promise(resolve=>setTimeout(resolve,milliseconds));
 
+  function loadScript(url){
+    return new Promise((resolve,reject)=>{
+      const script=document.createElement("script");
+      script.src=url;
+      script.async=true;
+      script.onload=resolve;
+      script.onerror=()=>reject(new Error("leitor Excel externo indisponível"));
+      document.head.appendChild(script);
+    });
+  }
+
   async function fetchText(url,label){
     let lastError;
     for(let attempt=1;attempt<=3;attempt++){
@@ -16,7 +27,7 @@
     throw lastError||new Error(`${label} indisponível`);
   }
 
-  try{
+  async function loadLocalFallback(){
     const manifestText=await fetchText("vendor/xlsx.parts/manifest.txt","manifesto do leitor Excel");
     const manifest=manifestText.trim().split(/\s+/);
     const count=Number(manifest[0]);
@@ -31,6 +42,14 @@
     const binary=atob(parts.join(""));
     const bytes=Uint8Array.from(binary,character=>character.charCodeAt(0));
     (0,eval)(new TextDecoder().decode(bytes));
+  }
+
+  try{
+    try{
+      await loadScript("https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js");
+    }catch(externalError){
+      await loadLocalFallback();
+    }
     if(!window.XLSX)throw new Error("biblioteca Excel não inicializada");
     window.dispatchEvent(new Event("xlsx-ready"));
   }catch(error){
