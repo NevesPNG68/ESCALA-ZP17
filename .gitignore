@@ -26,3 +26,5 @@ PLANILHA/*
 !PLANILHA/Escala_ZP17_*.xlsx
 !PLANILHA/*.xlsx.parts/
 !PLANILHA/*.xlsx.parts/*.txt
+!PLANILHA/*.xlsx.parts2/
+!PLANILHA/*.xlsx.parts2/*.txt
