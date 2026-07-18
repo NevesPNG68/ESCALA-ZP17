@@ -44,5 +44,32 @@ button,input,select,.button-link{min-height:42px;border-radius:11px;transition:b
  :root:not([data-theme=dark]) .hero span,
  :root:not([data-theme=dark]) label,
  :root:not([data-theme=dark]) .table-heading span{color:#667085;-webkit-text-fill-color:#667085}
+ :root[data-theme=dark]{color-scheme:dark;--bg:#080d18;--surface:#111827;--surface2:#182236;--text:#f1f5f9;--muted:#94a3b8;--line:#29354a;--brand:#60a5fa;--accent:#22d3ee}
+ :root[data-theme=dark] body{background:radial-gradient(circle at 8% 0,rgba(96,165,250,.08),transparent 28%),#080d18;color:#f1f5f9;-webkit-text-fill-color:#f1f5f9}
+ :root[data-theme=dark] header{background:rgba(17,24,39,.94);border-bottom-color:#29354a;color:#f1f5f9}
+ :root[data-theme=dark] .hero>div,
+ :root[data-theme=dark] .panel,
+ :root[data-theme=dark] .roster-card,
+ :root[data-theme=dark] .practitioner-card,
+ :root[data-theme=dark] .week-day,
+ :root[data-theme=dark] .month-trades{background:#111827;border-color:#29354a;color:#f1f5f9}
+ :root[data-theme=dark] .tabs,
+ :root[data-theme=dark] .filters,
+ :root[data-theme=dark] .ghost,
+ :root[data-theme=dark] .toolbar button,
+ :root[data-theme=dark] .button-link,
+ :root[data-theme=dark] .history-card,
+ :root[data-theme=dark] .work-dates,
+ :root[data-theme=dark] .person-chip{background:#182236;color:#f1f5f9;-webkit-text-fill-color:#f1f5f9}
+ :root[data-theme=dark] button,
+ :root[data-theme=dark] input,
+ :root[data-theme=dark] select{background:#111827;border-color:#46546b;color:#f1f5f9;-webkit-text-fill-color:#f1f5f9}
+ :root[data-theme=dark] .tabs button{background:transparent;color:#f1f5f9;-webkit-text-fill-color:#f1f5f9}
+ :root[data-theme=dark] .tabs .active{background:linear-gradient(135deg,#2563eb,#164bc5);color:#fff;-webkit-text-fill-color:#fff}
+ :root[data-theme=dark] .hero span,
+ :root[data-theme=dark] label,
+ :root[data-theme=dark] .table-heading span,
+ :root[data-theme=dark] .roster-card #serviceTitle,
+ :root[data-theme=dark] .roster-card #standbyTitle{color:#94a3b8;-webkit-text-fill-color:#94a3b8}
  h1{font-size:20px}.hero>div{padding:14px}.filters{padding:12px}.tabs{display:flex;overflow:auto}.tabs button{flex:1;white-space:nowrap}.roster-card{padding:15px}.practitioner-grid{grid-template-columns:1fr}.weekly-grid{grid-template-columns:repeat(7,82vw);scroll-snap-type:x mandatory}.week-day{scroll-snap-align:start}
 }
