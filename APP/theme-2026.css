@@ -18,4 +18,31 @@ button,input,select,.button-link{min-height:42px;border-radius:11px;transition:b
 .automatic-controls{display:none!important}
 .month-trades{overflow:hidden;border:1px solid var(--line);border-radius:15px;background:var(--surface)}.month-trades>summary{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:17px 19px;cursor:pointer;list-style:none;color:#fff;background:linear-gradient(120deg,#155eef,#0b78d1);box-shadow:inset 0 -1px rgba(255,255,255,.12);transition:filter .18s,transform .18s}.month-trades>summary::-webkit-details-marker{display:none}.month-trades>summary:hover{filter:brightness(1.08)}.month-trades>summary>div{display:grid;gap:3px}.month-trades>summary span{color:#fff;font-size:15px;font-weight:850}.month-trades>summary small{color:rgba(255,255,255,.72);font-size:10px}.month-trades>summary>strong{padding:5px 9px;border:1px solid rgba(255,255,255,.22);border-radius:999px;color:#fff;background:rgba(4,25,68,.2);font-size:11px}.month-trades[open]>summary{border-bottom:0}.month-trade-content{display:grid;gap:10px;padding:14px;background:var(--surface)}.month-trade-content>.swap-summary{margin-bottom:2px}
 @media(max-width:1000px) and (min-width:801px){.filters{grid-template-columns:repeat(3,1fr)}.filters button{margin-top:23px}.daily-roster{grid-template-columns:1fr 1fr}}
-@media(max-width:800px){h1{font-size:20px}.hero>div{padding:14px}.filters{padding:12px}.tabs{display:flex;overflow:auto}.tabs button{flex:1;white-space:nowrap}.roster-card{padding:15px}.practitioner-grid{grid-template-columns:1fr}.weekly-grid{grid-template-columns:repeat(7,82vw);scroll-snap-type:x mandatory}.week-day{scroll-snap-align:start}}
+@media(max-width:800px){
+ :root:not([data-theme=dark]){color-scheme:only light;--bg:#f6f8fc;--surface:#fff;--surface2:#f2f5fa;--text:#101828;--muted:#667085;--line:#e4e9f2;--brand:#2563eb;--accent:#06b6d4}
+ :root:not([data-theme=dark]) body{background:radial-gradient(circle at 8% 0,rgba(37,99,235,.08),transparent 28%),#f6f8fc;color:#101828}
+ :root:not([data-theme=dark]) header{background:rgba(255,255,255,.92);border-bottom-color:#e4e9f2;color:#101828}
+ :root:not([data-theme=dark]) .hero>div,
+ :root:not([data-theme=dark]) .panel,
+ :root:not([data-theme=dark]) .roster-card,
+ :root:not([data-theme=dark]) .practitioner-card,
+ :root:not([data-theme=dark]) .week-day,
+ :root:not([data-theme=dark]) .month-trades{background:#fff;border-color:#e4e9f2;color:#101828}
+ :root:not([data-theme=dark]) .tabs,
+ :root:not([data-theme=dark]) .filters,
+ :root:not([data-theme=dark]) .ghost,
+ :root:not([data-theme=dark]) .toolbar button,
+ :root:not([data-theme=dark]) .button-link,
+ :root:not([data-theme=dark]) .history-card,
+ :root:not([data-theme=dark]) .work-dates,
+ :root:not([data-theme=dark]) .person-chip{background:#f2f5fa;color:#101828}
+ :root:not([data-theme=dark]) button,
+ :root:not([data-theme=dark]) input,
+ :root:not([data-theme=dark]) select{background:#fff;border-color:#e4e9f2;color:#101828;-webkit-text-fill-color:#101828}
+ :root:not([data-theme=dark]) .tabs button{background:transparent;color:#101828;-webkit-text-fill-color:#101828}
+ :root:not([data-theme=dark]) .tabs .active{background:linear-gradient(135deg,#2563eb,#164bc5);color:#fff;-webkit-text-fill-color:#fff}
+ :root:not([data-theme=dark]) .hero span,
+ :root:not([data-theme=dark]) label,
+ :root:not([data-theme=dark]) .table-heading span{color:#667085;-webkit-text-fill-color:#667085}
+ h1{font-size:20px}.hero>div{padding:14px}.filters{padding:12px}.tabs{display:flex;overflow:auto}.tabs button{flex:1;white-space:nowrap}.roster-card{padding:15px}.practitioner-grid{grid-template-columns:1fr}.weekly-grid{grid-template-columns:repeat(7,82vw);scroll-snap-type:x mandatory}.week-day{scroll-snap-align:start}
+}
