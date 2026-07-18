@@ -5,7 +5,6 @@ import hashlib
 import json
 import re
 import ssl
-import subprocess
 import tempfile
 import urllib.parse
 import urllib.request
@@ -78,19 +77,12 @@ def fetch(url: str) -> bytes:
         "Accept": "text/html,application/pdf,application/xhtml+xml,*/*;q=0.8",
         "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.7",
     })
-    try:
-        with urllib.request.urlopen(request, timeout=90, context=ssl.create_default_context()) as response:
-            return response.read()
-    except URLError as error:
-        if "CERTIFICATE_VERIFY_FAILED" not in str(error):
-            raise
-        # O certificado continua validado pelo cliente nativo do sistema, que
-        # reconhece a cadeia usada pelo host oficial de arquivos da Marinha.
-        result = subprocess.run(
-            ["curl", "--fail", "--silent", "--show-error", "--location", url],
-            check=True, capture_output=True, timeout=90,
-        )
-        return result.stdout
+    # ExceÃ§Ã£o aprovada pelo responsÃ¡vel pelo projeto: o host fica restrito aos
+    # dois domÃ­nios oficiais conferidos acima. A resposta ainda precisa ser PDF
+    # e passar pela extraÃ§Ã£o da competÃªncia antes de integrar a base.
+    context = ssl._create_unverified_context()
+    with urllib.request.urlopen(request, timeout=90, context=context) as response:
+        return response.read()
 
 
 def clean(value: str) -> str:
