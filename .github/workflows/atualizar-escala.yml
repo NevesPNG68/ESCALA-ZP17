@@ -1,0 +1,42 @@
+name: Atualizar escala ZP-17
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: atualizar-escala-zp17
+  cancel-in-progress: false
+
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+      - name: Consultar CPPR e reconstruir a base
+        run: python SCRIPTS/atualizar_web.py
+      - name: Validar planilha
+        run: python SCRIPTS/validar_dados_2026.py
+      - name: Publicar somente quando houver alteracao
+        shell: bash
+        run: |
+          git add -f PLANILHA/Escala_ZP17_2026.xlsx PLANILHA/Escala_ZP17_2026.xlsx.parts2 APP/data/update-status.json
+          if git diff --cached --quiet; then
+            echo "Nenhuma alteracao oficial encontrada."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Atualiza escala oficial ZP-17"
+          git push
