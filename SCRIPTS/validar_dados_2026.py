@@ -32,6 +32,11 @@ def main():
     duplicates = [key for key, count in Counter(keys).items() if count > 1]
     outside = [row for row in scales if not str(row.get("ANO", "")).startswith("20") or int(str(row.get("ANO", "0")) or 0) < 2026]
     missing_source = [row for row in scales if not row.get("ARQUIVO_ORIGEM") or not row.get("PAGINA_ORIGEM")]
+    invalid_worked_day = [
+        row for row in scales
+        if (row.get("SITUACAO") == "PRATICO_EM_SERVICO" and row.get("DIA_TRABALHADO") != "SIM")
+        or (row.get("SITUACAO") == "PRATICO_EM_PRONTIDAO" and row.get("DIA_TRABALHADO") != "NÃO")
+    ]
     invalid_dates = [row for row in scales if not str(row.get("DATA", ""))[:4].isdigit() or int(str(row.get("DATA"))[:4]) < 2026]
     missing_calendar_days = []
     missing_weekdays = []
@@ -68,6 +73,8 @@ def main():
         issues.append(f"Publicacoes com dias ausentes entre a primeira e a ultima data: {len(missing_calendar_days)}")
     if missing_weekdays:
         issues.append(f"Publicacoes sem cobertura dos sete dias da semana: {len(missing_weekdays)}")
+    if invalid_worked_day:
+        issues.append(f"Registros com classificacao incorreta de dia trabalhado: {len(invalid_worked_day)}")
     report = [
         "# Validacao da base ZP-17", "",
         f"Consulta: {datetime.now().astimezone().isoformat(timespec='seconds')}", "",
@@ -80,6 +87,7 @@ def main():
         f"- Registros sem arquivo/pagina: {len(missing_source)}", "",
         f"- Publicacoes com lacunas de datas: {len(missing_calendar_days)}",
         f"- Publicacoes sem algum dia da semana: {len(missing_weekdays)}", "",
+        f"- Classificacoes incorretas de dia trabalhado: {len(invalid_worked_day)}", "",
         "## Resultado", "",
         "APROVADO" if not issues else "REPROVADO", "",
     ]
