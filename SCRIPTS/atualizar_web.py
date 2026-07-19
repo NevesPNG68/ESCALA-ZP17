@@ -27,7 +27,7 @@ MONTHS = {name: index for index, name in enumerate(
     ("janeiro", "fevereiro", "marco", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"), 1
 )}
 HEADERS = {
-    "ESCALAS": ["ID", "ANO", "MES", "COMPETENCIA", "VERSAO", "DATA", "DIA_SEMANA", "ORDEM", "TRIGRAMA", "NOME_PRATICO", "SITUACAO", "OBSERVACAO", "ARQUIVO_ORIGEM", "CAMINHO_ARQUIVO", "PAGINA_ORIGEM", "DATA_IMPORTACAO"],
+    "ESCALAS": ["ID", "ANO", "MES", "COMPETENCIA", "VERSAO", "DATA", "DIA_SEMANA", "ORDEM", "TRIGRAMA", "NOME_PRATICO", "SITUACAO", "DIA_TRABALHADO", "OBSERVACAO", "ARQUIVO_ORIGEM", "CAMINHO_ARQUIVO", "PAGINA_ORIGEM", "DATA_IMPORTACAO"],
     "PUBLICACOES": ["ID_PUBLICACAO", "ANO", "MES", "COMPETENCIA", "VERSAO", "DATA_PUBLICACAO", "NOME_ARQUIVO", "CAMINHO_LOCAL", "URL_ORIGEM", "HASH_SHA256", "TAMANHO_BYTES", "DATA_DOWNLOAD", "STATUS", "OBSERVACAO"],
     "ALTERACOES": ["ID_ALTERACAO", "COMPETENCIA", "VERSAO_ANTERIOR", "VERSAO_NOVA", "DATA", "ORDEM", "TRIGRAMA", "NOME_PRATICO", "TIPO_ALTERACAO", "VALOR_ANTERIOR", "VALOR_NOVO", "ARQUIVO_ANTERIOR", "ARQUIVO_NOVO", "DATA_COMPARACAO"],
     "PENDENCIAS": ["ID_PENDENCIA", "COMPETENCIA", "VERSAO", "ARQUIVO", "PAGINA", "TRECHO_ORIGINAL", "CAMPO_AFETADO", "MOTIVO", "SUGESTAO_DE_REVISAO", "STATUS_REVISAO"],
@@ -170,7 +170,8 @@ def rows_and_changes(publications, checked_at):
         year, month = map(int, competence.split("-"))
         by_competence.setdefault(competence, []).append(publication)
         for record in publication["registros"]:
-            scale_rows.append([f"ESC-{eid:06d}", year, month, competence, publication["versao"], record["data"], record["dia_semana"], record["ordem"], record["trigrama"], record["nome"], record["situacao"], record["observacao"], publication["arquivo"], record["caminho_arquivo"], record["pagina_original"], checked_at]); eid += 1
+            worked_day = "SIM" if record["situacao"] == "PRATICO_EM_SERVICO" else "NÃO"
+            scale_rows.append([f"ESC-{eid:06d}", year, month, competence, publication["versao"], record["data"], record["dia_semana"], record["ordem"], record["trigrama"], record["nome"], record["situacao"], worked_day, record["observacao"], publication["arquivo"], record["caminho_arquivo"], record["pagina_original"], checked_at]); eid += 1
         meta = publication["meta"]
         publication_rows.append([f"PUB-{pid:04d}", year, month, competence, publication["versao"], publication["data_publicacao"], publication["arquivo"], "", publication["url_origem"], meta["hash"], meta["size"], checked_at, "PROCESSADO_COM_PENDENCIAS" if publication["pendencias"] else "PROCESSADO", f"{len(publication['pendencias'])} pendencia(s)" if publication["pendencias"] else ""]); pid += 1
         for issue in publication["pendencias"]:
