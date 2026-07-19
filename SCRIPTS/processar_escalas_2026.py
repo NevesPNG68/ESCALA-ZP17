@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 import json
 import re
+import unicodedata
 from datetime import datetime
 from pathlib import Path
 
@@ -10,11 +11,15 @@ import pdfplumber
 
 BASE = Path(__file__).resolve().parents[1]
 MONTH_ABBR = {1:"JAN",2:"FEV",3:"MAR",4:"ABR",5:"MAI",6:"JUN",7:"JUL",8:"AGO",9:"SET",10:"OUT",11:"NOV",12:"DEZ"}
-WEEKDAYS = {"SEG":"SEGUNDA-FEIRA","TER":"TERCA-FEIRA","QUA":"QUARTA-FEIRA","QUI":"QUINTA-FEIRA","SEX":"SEXTA-FEIRA","SÃB":"SABADO","SAB":"SABADO","DOM":"DOMINGO"}
+WEEKDAYS = {"SEG":"SEGUNDA-FEIRA","TER":"TERCA-FEIRA","QUA":"QUARTA-FEIRA","QUI":"QUINTA-FEIRA","SEX":"SEXTA-FEIRA","SAB":"SABADO","DOM":"DOMINGO"}
+
+def normalized_code(value: str) -> str:
+    return "".join(character for character in unicodedata.normalize("NFD", value) if unicodedata.category(character) != "Mn").upper()
 
 def legend(page_text: str) -> dict[str, str]:
     result = {}
     for code, name in re.findall(r"\b([A-Z]{3})\s*-\s*([^\n]+?)(?=\b[A-Z]{3}\s*-|Legenda|$)", page_text.replace("\n", " ")):
+        name = re.split(r"\b(?:segunda|terca|terça|quarta|quinta|sexta|sabado|sábado|domingo)-feira,|\bpagina\s+\d+\s+de\s+\d+|\bpágina\s+\d+\s+de\s+\d+", name, maxsplit=1, flags=re.IGNORECASE)[0]
         result[code] = " ".join(name.split()).strip()
     return result
 
@@ -24,10 +29,10 @@ def extract_publication(path: Path, month: int, version: str, source_url: str, i
         page_texts = [page.extract_text() or "" for page in pdf.pages]
         names = legend(page_texts[-1]) if page_texts else {}
         published = ""
-        match = re.search(r"(\d{1,2}) de ([A-Za-zÃ§Ã‡]+) de (202[0-9])\s*-\s*(\d{2}:\d{2})", "\n".join(page_texts))
+        match = re.search(r"(\d{1,2}) de ([A-Za-zÀ-ÿ]+) de (202[0-9])\s*-\s*(\d{2}:\d{2})", "\n".join(page_texts))
         if match:
-            months_pt = {"janeiro":1,"fevereiro":2,"marÃ§o":3,"marco":3,"abril":4,"maio":5,"junho":6,"julho":7,"agosto":8,"setembro":9,"outubro":10,"novembro":11,"dezembro":12}
-            pm = months_pt.get(match.group(2).lower())
+            months_pt = {"janeiro":1,"fevereiro":2,"marco":3,"abril":4,"maio":5,"junho":6,"julho":7,"agosto":8,"setembro":9,"outubro":10,"novembro":11,"dezembro":12}
+            pm = months_pt.get(normalized_code(match.group(2)).lower())
             if pm: published = f"{match.group(3)}-{pm:02d}-{int(match.group(1)):02d} {match.group(4)}"
         for page_no, page in enumerate(pdf.pages[:2], start=1):
             tables = page.extract_tables()
@@ -39,9 +44,9 @@ def extract_publication(path: Path, month: int, version: str, source_url: str, i
             situation = "PRATICO_EM_SERVICO" if page_no == 1 else "PRATICO_EM_PRONTIDAO"
             headers = table[0]
             for col, header in enumerate(headers):
-                hm = re.match(r"(\d{2})/([A-ZÃ‡]{3})\s*\n?\s*([A-ZÃÃ‰ÃÃ“ÃšÃ‡]{3})", (header or "").upper())
+                hm = re.match(r"(\d{2})/([A-ZÀ-Ü]{3})\s*\n?\s*([A-ZÀ-Ü]{3})", (header or "").upper())
                 if not hm: continue
-                day, weekday = int(hm.group(1)), hm.group(3)
+                day, weekday = int(hm.group(1)), normalized_code(hm.group(3))
                 date = f"{year}-{month:02d}-{day:02d}"
                 for order, row in enumerate(table[1:], start=1):
                     raw = (row[col] or "").strip().replace("\n", " ") if col < len(row) else ""
