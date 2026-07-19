@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from openpyxl import load_workbook
@@ -33,6 +33,27 @@ def main():
     outside = [row for row in scales if not str(row.get("ANO", "")).startswith("20") or int(str(row.get("ANO", "0")) or 0) < 2026]
     missing_source = [row for row in scales if not row.get("ARQUIVO_ORIGEM") or not row.get("PAGINA_ORIGEM")]
     invalid_dates = [row for row in scales if not str(row.get("DATA", ""))[:4].isdigit() or int(str(row.get("DATA"))[:4]) < 2026]
+    missing_calendar_days = []
+    missing_weekdays = []
+    groups = {}
+    for row in scales:
+        try:
+            current = date.fromisoformat(str(row.get("DATA", ""))[:10])
+        except ValueError:
+            continue
+        groups.setdefault((row.get("COMPETENCIA"), row.get("VERSAO")), set()).add(current)
+    for key, dates in groups.items():
+        if not dates:
+            continue
+        first, last = min(dates), max(dates)
+        expected = {first + timedelta(days=offset) for offset in range((last - first).days + 1)}
+        gaps = sorted(expected - dates)
+        if gaps:
+            missing_calendar_days.append((key, gaps))
+        if (last - first).days >= 6:
+            absent = sorted(set(range(7)) - {item.weekday() for item in dates})
+            if absent:
+                missing_weekdays.append((key, absent))
     available = sorted({str(row.get("COMPETENCIA")) for row in publications if row.get("STATUS") != "NAO_LOCALIZADO"})
     issues = []
     if duplicates:
@@ -43,6 +64,10 @@ def main():
         issues.append(f"Datas invalidas ou fora do escopo: {len(invalid_dates)}")
     if missing_source:
         issues.append(f"Registros sem origem completa: {len(missing_source)}")
+    if missing_calendar_days:
+        issues.append(f"Publicacoes com dias ausentes entre a primeira e a ultima data: {len(missing_calendar_days)}")
+    if missing_weekdays:
+        issues.append(f"Publicacoes sem cobertura dos sete dias da semana: {len(missing_weekdays)}")
     report = [
         "# Validacao da base ZP-17", "",
         f"Consulta: {datetime.now().astimezone().isoformat(timespec='seconds')}", "",
@@ -53,6 +78,8 @@ def main():
         f"- Registros fora do escopo: {len(outside)}",
         f"- Datas invalidas: {len(invalid_dates)}",
         f"- Registros sem arquivo/pagina: {len(missing_source)}", "",
+        f"- Publicacoes com lacunas de datas: {len(missing_calendar_days)}",
+        f"- Publicacoes sem algum dia da semana: {len(missing_weekdays)}", "",
         "## Resultado", "",
         "APROVADO" if not issues else "REPROVADO", "",
     ]
