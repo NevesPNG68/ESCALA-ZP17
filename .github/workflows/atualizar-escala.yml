@@ -3,7 +3,8 @@ name: Atualizar escala ZP-17
 on:
   schedule:
     # 09:17 UTC = 06:17 em Brasilia (UTC-3).
-    - cron: "17 9 * * *"
+    # Dias 1, 4, 7, ... de cada mes; intervalo menor na virada do mes.
+    - cron: "17 9 */3 * *"
   workflow_dispatch:
 
 permissions:
