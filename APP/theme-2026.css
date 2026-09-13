@@ -73,3 +73,7 @@ button,input,select,.button-link{min-height:42px;border-radius:11px;transition:b
  :root[data-theme=dark] .roster-card #standbyTitle{color:#94a3b8;-webkit-text-fill-color:#94a3b8}
  h1{font-size:20px}.hero>div{padding:14px}.filters{padding:12px}.tabs{display:flex;overflow:auto}.tabs button{flex:1;white-space:nowrap}.roster-card{padding:15px}.practitioner-grid{grid-template-columns:1fr}.weekly-grid{grid-template-columns:repeat(7,82vw);scroll-snap-type:x mandatory}.week-day{scroll-snap-align:start}
 }
+
+/* Datas anteriores ao dia atual no detalhamento mensal. */
+.work-dates strong.past-date{background:#dbeafe;border-color:#93c5fd;color:#1e3a8a;-webkit-text-fill-color:#1e3a8a}
+[data-theme=dark] .work-dates strong.past-date{background:#29466b;border-color:#557ca7;color:#e0edff;-webkit-text-fill-color:#e0edff}
