@@ -13,12 +13,13 @@ from datetime import datetime, timezone
 from html.parser import HTMLParser
 from pathlib import Path
 
-from openpyxl import Workbook
+from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font, PatternFill
 
 from processar_escalas_2026 import extract_publication
 
 BASE = Path(__file__).resolve().parents[1]
+TARGET_YEAR = 2026
 SOURCES = (
     "https://www.marinha.mil.br/cppr/praticagem",
     "https://www.marinha.mil.br/cppr/praticagem_arquivo",
@@ -45,6 +46,8 @@ KNOWN_URLS = (
     "https://assets.marinha.mil.br/cppr/sites/www.marinha.mil.br.cppr/files/EscalaDeRodizio_ZP17_6-2026%20-%20ALT_1.pdf",
     "https://assets.marinha.mil.br/cppr/sites/www.marinha.mil.br.cppr/files/EscalaDeRodizio_ZP17_7-2026.pdf",
     "https://assets.marinha.mil.br/cppr/sites/www.marinha.mil.br.cppr/files/EscalaDeRodizio_ZP17_7-2026%20-%20ALT_1.pdf",
+    "https://assets.marinha.mil.br/cppr/sites/www.marinha.mil.br.cppr/files/EscalaDeRodizio_ZP17_9-2026.pdf",
+    "https://assets.marinha.mil.br/cppr/sites/www.marinha.mil.br.cppr/files/EscalaDeRodizio_ZP17_10-2026.pdf",
 )
 
 
@@ -94,7 +97,7 @@ def identify(label: str, url: str):
     if "escala" not in text or "rodizio" not in text or not re.search(r"zp\s*-?\s*17", text):
         return None
     year_match = re.search(r"(?<!\d)(20\d{2})(?!\d)", text)
-    if not year_match or int(year_match.group(1)) < 2026:
+    if not year_match or int(year_match.group(1)) != TARGET_YEAR:
         return None
     year = int(year_match.group(1))
     month = next((number for name, number in MONTHS.items() if name in text), None)
@@ -108,8 +111,47 @@ def identify(label: str, url: str):
     return year, month, version
 
 
+def existing_candidates():
+    path = BASE / "PLANILHA" / "Escala_ZP17_2026.xlsx"
+    if not path.exists():
+        return []
+    try:
+        workbook = load_workbook(path, read_only=True, data_only=True)
+        sheet = workbook["PUBLICACOES"]
+        rows = list(sheet.iter_rows(values_only=True))
+        headers = [str(value or "").strip() for value in rows[0]] if rows else []
+        index = {header: position for position, header in enumerate(headers)}
+        candidates = []
+        for row in rows[1:]:
+            status = row[index["STATUS"]] if "STATUS" in index else ""
+            url = row[index["URL_ORIGEM"]] if "URL_ORIGEM" in index else ""
+            if status == "NAO_LOCALIZADO" or not url:
+                continue
+            year = int(row[index["ANO"]]) if "ANO" in index and row[index["ANO"]] else TARGET_YEAR
+            month = int(row[index["MES"]]) if "MES" in index and row[index["MES"]] else 0
+            if year != TARGET_YEAR or not 1 <= month <= 12:
+                continue
+            candidates.append({
+                "year": year,
+                "month": month,
+                "version": str(row[index["VERSAO"]] or "ORIGINAL"),
+                "url": str(url),
+                "label": str(row[index["NOME_ARQUIVO"]] or "Documento preservado"),
+            })
+        workbook.close()
+        return candidates
+    except (KeyError, TypeError, ValueError):
+        return []
+
+
+def add_candidate(found, candidate):
+    found[(candidate["year"], candidate["month"], candidate["version"], candidate["url"])] = candidate
+
+
 def discover():
     found = {}
+    for candidate in existing_candidates():
+        add_candidate(found, candidate)
     for page in SOURCES:
         parser = Links()
         try:
@@ -120,22 +162,24 @@ def discover():
             url = urllib.parse.urljoin(page, href)
             item = identify(label, url)
             if item:
-                found[(item[0], item[1], item[2], url)] = {"year": item[0], "month": item[1], "version": item[2], "url": url, "label": " ".join(label.split())}
+                add_candidate(found, {"year": item[0], "month": item[1], "version": item[2], "url": url, "label": " ".join(label.split())})
     for url in KNOWN_URLS:
         item = identify("Escala de Rodizio Unica ZP-17", url)
         if item:
-            found[(item[0], item[1], item[2], url)] = {"year": item[0], "month": item[1], "version": item[2], "url": url, "label": "Documento oficial confirmado"}
+            add_candidate(found, {"year": item[0], "month": item[1], "version": item[2], "url": url, "label": "Documento oficial confirmado"})
     probe_official_names(found)
     return sorted(found.values(), key=lambda item: (item["year"], item["month"], version_rank(item["version"]), item["url"]))
 
 
 def probe_official_names(found):
     now = datetime.now()
-    periods = [(now.year, now.month)]
-    periods.append((now.year + 1, 1) if now.month == 12 else (now.year, now.month + 1))
+    periods = {(TARGET_YEAR, now.month), (TARGET_YEAR, now.month % 12 + 1)}
+    known_months = [key[1] for key in found if key[0] == TARGET_YEAR]
+    if known_months:
+        periods.add((TARGET_YEAR, max(known_months)))
     base = "https://assets.marinha.mil.br/cppr/sites/www.marinha.mil.br.cppr/files/"
     for year, month in periods:
-        if year < 2026:
+        if year != TARGET_YEAR:
             continue
         names = [f"EscalaDeRodizio_ZP17_{month}-{year}.pdf"]
         for alt in range(1, 11):
@@ -154,7 +198,7 @@ def probe_official_names(found):
             except (HTTPError, URLError):
                 continue
             if data.startswith(b"%PDF"):
-                found[(key_item[0], key_item[1], key_item[2], url)] = {"year": key_item[0], "month": key_item[1], "version": key_item[2], "url": url, "label": "PDF oficial localizado por verificacao mensal"}
+                add_candidate(found, {"year": key_item[0], "month": key_item[1], "version": key_item[2], "url": url, "label": "PDF oficial localizado por verificacao mensal"})
 
 
 def version_rank(value):

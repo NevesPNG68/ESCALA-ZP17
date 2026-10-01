@@ -47,14 +47,16 @@ Acesse `http://localhost:8000/APP/`. Abrir o HTML diretamente pode bloquear a le
 
 ## Atualização
 
-`atualizar_projeto_2026.py` cria backup sem duplicar hashes, baixa somente publicações conhecidas de 2026, preserva versões anteriores, processa, reconstrói a planilha e valida. O manifesto do downloader é deliberadamente restritivo; novas URLs oficiais devem ser confirmadas na página CPPR e incluídas na lista `KNOWN_OFFICIAL`. Arquivos fora de 2026 nunca devem ser adicionados.
+`atualizar_web.py` preserva as publicações já registradas na planilha, lê os links atuais da CPPR e verifica os nomes oficiais do mês corrente, do mês seguinte e da competência mais recente conhecida. Assim, uma nova escala ou ALT entra sem apagar o histórico quando a página estiver temporariamente indisponível. Arquivos fora de 2026 nunca devem ser adicionados.
+
+`verificar_agendamento.py` aplica a política do monitor em horário de Brasília: consulta diária nos cinco dias anteriores ao fim do mês, consulta a cada três dias até o dia 10 do mês seguinte quando a próxima escala ainda não existe, e intervalo de dez dias no restante do ciclo. A execução manual do workflow sempre força uma consulta.
 
 ## GitHub Pages
 
-O projeto usa caminhos relativos e não contém credenciais. Para publicação futura, mantenha `APP`, `PLANILHA` e `ARQUIVOS_CPPR` juntos na mesma estrutura. Configure a raiz do repositório como origem do Pages; não houve publicação automática.
+O projeto usa caminhos relativos e não contém credenciais. O workflow `Atualizar escala ZP-17` reconstrói e publica a base no `main` quando detecta uma nova publicação ou ALT; o GitHub Pages acompanha essa alteração automaticamente.
 
 ## Limitações
 
-- Fevereiro e agosto a dezembro não estavam localizados na fonte na consulta de 17/07/2026.
+- Competências sem documento oficial permanecem identificadas como `NAO_LOCALIZADO` na aba `PUBLICACOES`.
 - A cadeia TLS da Marinha não foi reconhecida pelo runtime local; o downloader limita domínios e usa hashes para auditoria.
 - GitHub Pages pode impor limites de tamanho no futuro; os arquivos atuais são pequenos.

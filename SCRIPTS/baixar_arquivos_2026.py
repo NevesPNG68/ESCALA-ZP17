@@ -11,6 +11,8 @@ import urllib.request
 from datetime import datetime
 from pathlib import Path
 
+from atualizar_web import discover
+
 BASE = Path(__file__).resolve().parents[1]
 SOURCE_URL = "https://www.marinha.mil.br/cppr/praticagem"
 ARCHIVE_URL = "https://www.marinha.mil.br/cppr/praticagem_arquivo"
@@ -19,21 +21,6 @@ MONTHS = {
     5: "05_MAIO", 6: "06_JUNHO", 7: "07_JULHO", 8: "08_AGOSTO",
     9: "09_SETEMBRO", 10: "10_OUTUBRO", 11: "11_NOVEMBRO", 12: "12_DEZEMBRO",
 }
-KNOWN_OFFICIAL = [
-    (1, "ORIGINAL", "https://www.marinha.mil.br/cppr/sites/www.marinha.mil.br.cppr/files/2026-03/EscalaDeRodizio_ZP17_1-2026.pdf"),
-    (3, "ORIGINAL", "https://www.marinha.mil.br/cppr/sites/www.marinha.mil.br.cppr/files/EscalaDeRodizio_ZP17_3-2026.pdf"),
-    (3, "ALT-02", "https://www.marinha.mil.br/cppr/sites/www.marinha.mil.br.cppr/files/EscalaDeRodizio_ZP17_3-2026%20ALT%202.pdf"),
-    (4, "ORIGINAL", "https://www.marinha.mil.br/cppr/sites/www.marinha.mil.br.cppr/files/EscalaDeRodizio_ZP17_4-2026.pdf"),
-    (4, "ALT-01", "https://www.marinha.mil.br/cppr/sites/www.marinha.mil.br.cppr/files/EscalaDeRodizio_ZP17_4-2026%20ALT_01.pdf"),
-    (5, "ORIGINAL", "https://www.marinha.mil.br/cppr/sites/www.marinha.mil.br.cppr/files/EscalaDeRodizio_ZP17_5-2026.pdf"),
-    (5, "ALT-01", "https://www.marinha.mil.br/cppr/sites/www.marinha.mil.br.cppr/files/EscalaDeRodizio_ZP17_5-2026%20-%20ALT_1.pdf"),
-    (5, "ALT-02", "https://www.marinha.mil.br/cppr/sites/www.marinha.mil.br.cppr/files/EscalaDeRodizio_ZP17_5-2026%20-%20ALT_2.pdf"),
-    (6, "ORIGINAL", "https://www.marinha.mil.br/cppr/sites/www.marinha.mil.br.cppr/files/EscalaDeRodizio_ZP17_6-2026.pdf"),
-    (6, "ALT-01", "https://www.marinha.mil.br/cppr/sites/www.marinha.mil.br.cppr/files/EscalaDeRodizio_ZP17_6-2026%20-%20ALT_1.pdf"),
-    (7, "ORIGINAL", "https://www.marinha.mil.br/cppr/sites/www.marinha.mil.br.cppr/files/EscalaDeRodizio_ZP17_7-2026.pdf"),
-    (7, "ALT-01", "https://www.marinha.mil.br/cppr/sites/www.marinha.mil.br.cppr/files/EscalaDeRodizio_ZP17_7-2026%20-%20ALT_1.pdf"),
-]
-
 def fetch(url: str) -> bytes:
     if urllib.parse.urlparse(url).hostname not in {"www.marinha.mil.br", "assets.marinha.mil.br"}:
         raise ValueError("Dominio fora da fonte oficial permitida")
@@ -64,7 +51,10 @@ def main() -> int:
             previous = list(csv.DictReader(fh))
     by_hash = {row.get("HASH_SHA256"): row for row in previous if row.get("HASH_SHA256")}
     rows = list(previous)
-    for month, version, url in KNOWN_OFFICIAL:
+    candidates = discover()
+    print(f"PUBLICACOES LOCALIZADAS: {len(candidates)}")
+    for candidate in candidates:
+        month, version, url = candidate["month"], candidate["version"], candidate["url"]
         original = urllib.parse.unquote(Path(urllib.parse.urlparse(url).path).name)
         try:
             data = fetch(url)
