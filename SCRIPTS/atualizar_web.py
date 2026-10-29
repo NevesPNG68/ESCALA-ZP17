@@ -35,6 +35,12 @@ HEADERS = {
     "PENDENCIAS": ["ID_PENDENCIA", "COMPETENCIA", "VERSAO", "ARQUIVO", "PAGINA", "TRECHO_ORIGINAL", "CAMPO_AFETADO", "MOTIVO", "SUGESTAO_DE_REVISAO", "STATUS_REVISAO"],
 }
 KNOWN_URLS = (
+    # Links conferidos na pagina oficial em 29/10/2026.
+    "https://assets.marinha.mil.br/cppr/sites/www.marinha.mil.br.cppr/files/EscalaDeRodizio_ZP17_10-2026%20-%20ALT_02.pdf",
+    "https://assets.marinha.mil.br/cppr/sites/www.marinha.mil.br.cppr/files/EscalaDeRodizio_ZP17_10-2026%20-%20ALT_01.pdf",
+    "https://assets.marinha.mil.br/cppr/sites/www.marinha.mil.br.cppr/files/EscalaDeRodizio_ZP17_9-2026%20ALT_1.pdf",
+    "https://assets.marinha.mil.br/cppr/sites/www.marinha.mil.br.cppr/files/EscalaDeRodizio_ZP17_8-2026-%20ALT_1.pdf",
+
     "https://assets.marinha.mil.br/cppr/sites/www.marinha.mil.br.cppr/files/2026-03/EscalaDeRodizio_ZP17_1-2026.pdf",
     "https://assets.marinha.mil.br/cppr/sites/www.marinha.mil.br.cppr/files/EscalaDeRodizio_ZP17_3-2026.pdf",
     "https://assets.marinha.mil.br/cppr/sites/www.marinha.mil.br.cppr/files/EscalaDeRodizio_ZP17_3-2026%20ALT%202.pdf",
@@ -160,6 +166,12 @@ def add_candidate(found, candidate):
     found[(candidate["year"], candidate["month"], candidate["version"], candidate["url"])] = candidate
 
 
+class SourceUnavailable(RuntimeError):
+    def __init__(self, candidates):
+        super().__init__("Pagina atual da CPPR indisponivel; novas publicacoes nao puderam ser verificadas")
+        self.candidates = candidates
+
+
 def discover():
     found = {}
     for candidate in existing_candidates():
@@ -186,7 +198,7 @@ def discover():
         if item:
             add_candidate(found, {"year": item[0], "month": item[1], "version": item[2], "url": url, "label": "Documento oficial confirmado"})
     if SOURCES[0] not in confirmed_pages:
-        raise RuntimeError("Pagina atual da CPPR indisponivel ou sem escalas reconhecidas; base anterior preservada. Nao e possivel confirmar atualizacao.")
+        raise SourceUnavailable(sorted(found.values(), key=lambda item: (item["year"], item["month"], version_rank(item["version"]), item["url"])))
     return sorted(found.values(), key=lambda item: (item["year"], item["month"], version_rank(item["version"]), item["url"]))
 
 
@@ -264,7 +276,13 @@ def write_parts(path):
 
 def main():
     checked_at = datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
-    candidates = discover()
+    source_confirmed = True
+    try:
+        candidates = discover()
+    except SourceUnavailable as exc:
+        candidates = exc.candidates
+        source_confirmed = False
+        print(f"AVISO: {exc}. Processando apenas links oficiais ja conhecidos.", flush=True)
     if not candidates:
         raise RuntimeError("Nenhuma publicacao oficial ZP-17 de 2026 em diante foi localizada")
     publications = []
@@ -289,7 +307,7 @@ def main():
     workbook_path = BASE / "PLANILHA" / "Escala_ZP17_2026.xlsx"
     write_workbook(tables, workbook_path)
     write_parts(workbook_path)
-    status = {"checked_at": checked_at, "status": "ATUALIZADO", "source": SOURCES[0], "publications": len(publications), "records": len(tables["ESCALAS"]), "years": sorted({item["competencia"][:4] for item in publications})}
+    status = {"checked_at": checked_at, "status": "ATUALIZADO" if source_confirmed else "CONSULTA_PARCIAL", "source": SOURCES[0], "publications": len(publications), "records": len(tables["ESCALAS"]), "years": sorted({item["competencia"][:4] for item in publications})}
     output = BASE / "APP" / "data" / "update-status.json"
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(status, ensure_ascii=False, indent=2), encoding="utf-8")

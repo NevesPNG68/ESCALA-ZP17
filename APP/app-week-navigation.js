@@ -3,7 +3,7 @@ const val=(r,k)=>r[k]??""; const norm=v=>String(v??"").normalize("NFD").replace(
 const displayDate=v=>{if(!v)return "—";const text=String(v),numeric=typeof v==="number"?v:/^\d{5}(\.\d+)?$/.test(text)?Number(v):null;if(numeric!==null)return new Date(Math.round((numeric-25569)*864e5)).toLocaleDateString("pt-BR");const d=new Date(/^\d{4}-\d{2}-\d{2}$/.test(text)?text+"T12:00:00":text);return isNaN(d)?text:d.toLocaleDateString("pt-BR")};
 function options(el,values,all="Todos"){const current=el.value;el.innerHTML=`<option value="">${all}</option>`+[...new Set(values.filter(Boolean))].sort().map(v=>`<option>${v}</option>`).join("");if([...el.options].some(o=>o.value===current))el.value=current}
 async function workbookBytes(){const base="../PLANILHA/Escala_ZP17_2026.xlsx.parts2/",manifest=await fetch(base+"manifest.txt",{cache:"no-store"});if(!manifest.ok)throw new Error(`Manifesto da planilha indisponível: HTTP ${manifest.status}`);const count=Number((await manifest.text()).trim().split(/\s+/)[0]);if(!Number.isInteger(count)||count<1)throw new Error("Manifesto da planilha inválido");const parts=await Promise.all(Array.from({length:count},(_,index)=>fetch(base+`part-${String(index).padStart(3,"0")}.txt`,{cache:"no-store"}).then(async response=>{if(!response.ok)throw new Error(`Parte ${index+1} da planilha indisponível`);return (await response.text()).trim()})));const binary=atob(parts.join(""));return Uint8Array.from(binary,character=>character.charCodeAt(0))}
-async function load(){try{state.workbookBytes=await workbookBytes();const wb=XLSX.read(state.workbookBytes,{type:"array",cellDates:true});for(const name of ["ESCALAS","PUBLICACOES","ALTERACOES","PENDENCIAS"]){if(!wb.Sheets[name])throw new Error(`Aba obrigatória ausente: ${name}`);state.sheets[name]=XLSX.utils.sheet_to_json(wb.Sheets[name],{defval:"",raw:false})}const excelLink=$(".button-link");excelLink.href=URL.createObjectURL(new Blob([state.workbookBytes],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}));excelLink.download="Escala_ZP17_2026.xlsx";init();$("#status").className="notice ready"}catch(e){$("#status").className="notice error";$("#status").textContent=`Não foi possível carregar a planilha: ${e.message}. Inicie um servidor local na pasta ESCALA_ZP17.`}}
+async function load(){try{state.workbookBytes=await workbookBytes();const wb=XLSX.read(state.workbookBytes,{type:"array",cellDates:true});for(const name of ["ESCALAS","PUBLICACOES","ALTERACOES","PENDENCIAS"]){if(!wb.Sheets[name])throw new Error(`Aba obrigatória ausente: ${name}`);state.sheets[name]=XLSX.utils.sheet_to_json(wb.Sheets[name],{defval:"",raw:false})}const excelLink=$(".button-link");excelLink.href=URL.createObjectURL(new Blob([state.workbookBytes],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}));excelLink.download="Escala_ZP17_2026.xlsx";init();await showSourceStatus()}catch(e){$("#status").className="notice error";$("#status").textContent=`Não foi possível carregar a planilha: ${e.message}. Inicie um servidor local na pasta ESCALA_ZP17.`}}
 function competenceLabel(value){const names=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"],month=Number(String(value).slice(-2));return month?`${names[month-1]}/2026`:value}
 function competenceOptions(el,values){el.innerHTML='<option value="">Ano inteiro — últimas versões</option>'+[...new Set(values.filter(Boolean))].sort().map(v=>`<option value="${v}">${competenceLabel(v)}</option>`).join("")}
 function versionLabel(value){return value==="ORIGINAL"?"Original":`Alteração ${String((value.match(/\d+/)||[""])[0]).padStart(2,"0")}`}
@@ -95,4 +95,19 @@ else{
     $("#status").className="notice error";
     $("#status").textContent=`Não foi possível iniciar o leitor da planilha: ${event.detail?.message||"erro desconhecido"}.`;
   },{once:true});
+}
+
+async function showSourceStatus(){
+  const element=document.querySelector('#status');
+  try {
+    const response=await fetch('data/update-status.json',{cache:'no-store'});
+    if(!response.ok)throw new Error('Status indisponível');
+    const status=await response.json();
+    if(status.status!=='ATUALIZADO')throw new Error('Consulta incompleta');
+    element.className='notice ready';
+    element.textContent='Base conferida com a página oficial da CPPR em '+new Date(status.checked_at).toLocaleString('pt-BR')+'.';
+  }catch(error){
+    element.className='notice error';
+    element.textContent='Atenção: a consulta automática à CPPR não pôde confirmar novas publicações. A escala abaixo contém os documentos oficiais já importados; a data da planilha não garante que seja a última versão disponível.';
+  }
 }
