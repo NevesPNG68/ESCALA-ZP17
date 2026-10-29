@@ -1,6 +1,12 @@
 name: Atualizar escala ZP-17
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'SCRIPTS/**'
+      - 'tests/**'
+      - '.github/workflows/atualizar-escala.yml'
   schedule:
     # O workflow acorda diariamente; o script abaixo decide quando consultar a CPPR.
     # Isso permite respeitar o fim real de cada mês e compensar atrasos do GitHub.
@@ -26,17 +32,19 @@ jobs:
           cache: pip
       - name: Instalar dependencias
         run: pip install -r requirements.txt
+      - name: Testar descoberta e protecao da base
+        run: python -m unittest discover -s tests
       - name: Aplicar regra de agendamento
         id: policy
         run: python SCRIPTS/verificar_agendamento.py
       - name: Consultar CPPR e reconstruir a base
-        if: github.event_name == 'workflow_dispatch' || steps.policy.outputs.due == 'true'
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || steps.policy.outputs.due == 'true'
         run: python SCRIPTS/atualizar_web.py
       - name: Validar planilha
-        if: github.event_name == 'workflow_dispatch' || steps.policy.outputs.due == 'true'
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || steps.policy.outputs.due == 'true'
         run: python SCRIPTS/validar_dados_2026.py
       - name: Publicar somente quando houver alteracao
-        if: github.event_name == 'workflow_dispatch' || steps.policy.outputs.due == 'true'
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || steps.policy.outputs.due == 'true'
         shell: bash
         run: |
           git add -f PLANILHA/Escala_ZP17_2026.xlsx PLANILHA/Escala_ZP17_2026.xlsx.parts2 APP/data/update-status.json

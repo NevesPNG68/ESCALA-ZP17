@@ -47,7 +47,7 @@ Acesse `http://localhost:8000/APP/`. Abrir o HTML diretamente pode bloquear a le
 
 ## Atualização
 
-`atualizar_web.py` preserva as publicações já registradas na planilha, lê os links atuais da CPPR e verifica os nomes oficiais do mês corrente, do mês seguinte e da competência mais recente conhecida. Assim, uma nova escala ou ALT entra sem apagar o histórico quando a página estiver temporariamente indisponível. Arquivos fora de 2026 nunca devem ser adicionados.
+`atualizar_web.py` preserva as publicações já registradas na planilha e lê os links atuais e o arquivo histórico da CPPR, normalizando os endereços para evitar duplicidades. A atualização só prossegue se a página atual apresentar escalas reconhecidas. Erros temporários de download têm até três tentativas; se a consulta ou a extração falhar, a rotina encerra sem substituir a base nem registrar uma atualização bem-sucedida. Novas versões são incluídas pelo link oficial, independentemente do padrão de nome do arquivo.
 
 `verificar_agendamento.py` aplica a política do monitor em horário de Brasília: consulta diária nos cinco dias anteriores ao fim do mês, consulta a cada três dias até o dia 10 do mês seguinte quando a próxima escala ainda não existe, e intervalo de dez dias no restante do ciclo. A execução manual do workflow sempre força uma consulta.
 

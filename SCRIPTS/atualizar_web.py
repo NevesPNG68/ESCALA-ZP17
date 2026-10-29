@@ -6,6 +6,7 @@ import json
 import re
 import ssl
 import tempfile
+import unicodedata
 import urllib.parse
 import urllib.request
 from urllib.error import HTTPError, URLError
@@ -84,12 +85,21 @@ def fetch(url: str) -> bytes:
     # dois domÃ­nios oficiais conferidos acima. A resposta ainda precisa ser PDF
     # e passar pela extraÃ§Ã£o da competÃªncia antes de integrar a base.
     context = ssl._create_unverified_context()
-    with urllib.request.urlopen(request, timeout=90, context=context) as response:
-        return response.read()
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(request, timeout=30, context=context) as response:
+                return response.read()
+        except HTTPError as exc:
+            if exc.code not in {429, 500, 502, 503, 504} or attempt == 2:
+                raise
+        except (URLError, TimeoutError):
+            if attempt == 2:
+                raise
 
 
 def clean(value: str) -> str:
-    return value.lower().replace("Ã§", "c").replace("Ã¡", "a").replace("Ã£", "a").replace("Ã³", "o").replace("Ã­", "i")
+    return "".join(c for c in unicodedata.normalize("NFKD", value.lower())
+                   if not unicodedata.combining(c))
 
 
 def identify(label: str, url: str):
@@ -145,6 +155,8 @@ def existing_candidates():
 
 
 def add_candidate(found, candidate):
+    candidate = dict(candidate)
+    candidate["url"] = candidate["url"].replace("https://www.marinha.mil.br/", "https://assets.marinha.mil.br/")
     found[(candidate["year"], candidate["month"], candidate["version"], candidate["url"])] = candidate
 
 
@@ -152,53 +164,30 @@ def discover():
     found = {}
     for candidate in existing_candidates():
         add_candidate(found, candidate)
+    confirmed_pages = set()
     for page in SOURCES:
         parser = Links()
         try:
             parser.feed(fetch(page).decode("utf-8", errors="replace"))
-        except (HTTPError, URLError):
-            continue
+        except (HTTPError, URLError, TimeoutError):
+            # O servidor de arquivos também disponibiliza as páginas oficiais.
+            try:
+                parser.feed(fetch(page.replace("www.marinha", "assets.marinha")).decode("utf-8", errors="replace"))
+            except (HTTPError, URLError, TimeoutError):
+                continue
         for href, label in parser.links:
             url = urllib.parse.urljoin(page, href)
             item = identify(label, url)
             if item:
+                confirmed_pages.add(page)
                 add_candidate(found, {"year": item[0], "month": item[1], "version": item[2], "url": url, "label": " ".join(label.split())})
     for url in KNOWN_URLS:
         item = identify("Escala de Rodizio Unica ZP-17", url)
         if item:
             add_candidate(found, {"year": item[0], "month": item[1], "version": item[2], "url": url, "label": "Documento oficial confirmado"})
-    probe_official_names(found)
+    if SOURCES[0] not in confirmed_pages:
+        raise RuntimeError("Pagina atual da CPPR indisponivel ou sem escalas reconhecidas; base anterior preservada. Nao e possivel confirmar atualizacao.")
     return sorted(found.values(), key=lambda item: (item["year"], item["month"], version_rank(item["version"]), item["url"]))
-
-
-def probe_official_names(found):
-    now = datetime.now()
-    periods = {(TARGET_YEAR, now.month), (TARGET_YEAR, now.month % 12 + 1)}
-    known_months = [key[1] for key in found if key[0] == TARGET_YEAR]
-    if known_months:
-        periods.add((TARGET_YEAR, max(known_months)))
-    base = "https://assets.marinha.mil.br/cppr/sites/www.marinha.mil.br.cppr/files/"
-    for year, month in periods:
-        if year != TARGET_YEAR:
-            continue
-        names = [f"EscalaDeRodizio_ZP17_{month}-{year}.pdf"]
-        for alt in range(1, 11):
-            names.extend((
-                f"EscalaDeRodizio_ZP17_{month}-{year} - ALT_{alt}.pdf",
-                f"EscalaDeRodizio_ZP17_{month}-{year} ALT_{alt:02d}.pdf",
-                f"EscalaDeRodizio_ZP17_{month}-{year} ALT {alt}.pdf",
-            ))
-        for name in names:
-            url = base + urllib.parse.quote(name)
-            key_item = identify("Escala de Rodizio Unica ZP-17", url)
-            if not key_item or any(key[:3] == key_item for key in found):
-                continue
-            try:
-                data = fetch(url)
-            except (HTTPError, URLError):
-                continue
-            if data.startswith(b"%PDF"):
-                add_candidate(found, {"year": key_item[0], "month": key_item[1], "version": key_item[2], "url": url, "label": "PDF oficial localizado por verificacao mensal"})
 
 
 def version_rank(value):
@@ -282,6 +271,7 @@ def main():
     with tempfile.TemporaryDirectory(prefix="zp17-") as folder:
         folder = Path(folder)
         for candidate in candidates:
+            print(f"Lendo {candidate['month']:02d} {candidate['version']}: {candidate['url']}", flush=True)
             data = fetch(candidate["url"])
             if not data.startswith(b"%PDF"):
                 raise RuntimeError(f"Arquivo oficial nao e PDF: {candidate['url']}")
@@ -289,6 +279,8 @@ def main():
             path = folder / filename
             path.write_bytes(data)
             publication = extract_publication(path, candidate["month"], candidate["version"], candidate["url"], checked_at, candidate["year"])
+            if not publication["registros"] or publication["pendencias"]:
+                raise RuntimeError(f"Extracao incompleta: {filename}; base anterior preservada")
             publication["meta"] = {"hash": hashlib.sha256(data).hexdigest(), "size": len(data)}
             publications.append(publication)
     if not any(item["registros"] for item in publications):
