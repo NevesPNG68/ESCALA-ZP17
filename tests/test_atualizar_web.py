@@ -18,18 +18,18 @@ class DiscoveryTests(unittest.TestCase):
         self.assertEqual(len(found), 1)
 
     def test_unavailable_page_must_not_report_success(self):
-        with patch.object(updater, 'fetch', side_effect=URLError('offline')), patch.object(updater, 'existing_candidates', return_value=[]):
+        with patch.object(updater, 'fetch', side_effect=URLError('offline')), patch.object(updater, 'existing_candidates', return_value=[]), patch.object(updater, 'probe_official_names'):
             with self.assertRaises(RuntimeError):
                 updater.discover()
 
     def test_html_without_scales_must_not_report_success(self):
-        with patch.object(updater, 'fetch', return_value=b'<html>Temporarily unavailable</html>'), patch.object(updater, 'existing_candidates', return_value=[]):
+        with patch.object(updater, 'fetch', return_value=b'<html>Temporarily unavailable</html>'), patch.object(updater, 'existing_candidates', return_value=[]), patch.object(updater, 'probe_official_names'):
             with self.assertRaises(RuntimeError):
                 updater.discover()
 
     def test_current_page_discovers_padded_alteration(self):
         html = b'<a href="/cppr/files/EscalaDeRodizio_ZP17_10-2026%20-%20ALT_02.pdf">Escala de Rodizio Unica ZP-17 - OUTUBRO - ALT 2</a>'
-        with patch.object(updater, 'fetch', return_value=html), patch.object(updater, 'existing_candidates', return_value=[]):
+        with patch.object(updater, 'fetch', return_value=html), patch.object(updater, 'existing_candidates', return_value=[]), patch.object(updater, 'probe_official_names'):
             self.assertTrue(any(c['month'] == 10 and c['version'] == 'ALT-02' for c in updater.discover()))
 
 if __name__ == '__main__':

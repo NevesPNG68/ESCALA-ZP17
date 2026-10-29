@@ -198,8 +198,42 @@ def discover():
         if item:
             add_candidate(found, {"year": item[0], "month": item[1], "version": item[2], "url": url, "label": "Documento oficial confirmado"})
     if SOURCES[0] not in confirmed_pages:
+        probe_official_names(found)
         raise SourceUnavailable(sorted(found.values(), key=lambda item: (item["year"], item["month"], version_rank(item["version"]), item["url"])))
     return sorted(found.values(), key=lambda item: (item["year"], item["month"], version_rank(item["version"]), item["url"]))
+
+
+def probe_official_names(found):
+    now = datetime.now()
+    periods = {(TARGET_YEAR, now.month), (TARGET_YEAR, now.month % 12 + 1)}
+    known_months = [key[1] for key in found if key[0] == TARGET_YEAR]
+    if known_months:
+        periods.add((TARGET_YEAR, max(known_months)))
+    base = "https://assets.marinha.mil.br/cppr/sites/www.marinha.mil.br.cppr/files/"
+    for year, month in periods:
+        if year != TARGET_YEAR:
+            continue
+        names = [f"EscalaDeRodizio_ZP17_{month}-{year}.pdf"]
+        for alt in range(1, 11):
+            names.extend((
+                f"EscalaDeRodizio_ZP17_{month}-{year} - ALT_{alt}.pdf",
+                f"EscalaDeRodizio_ZP17_{month}-{year} - ALT_{alt:02d}.pdf",
+                f"EscalaDeRodizio_ZP17_{month}-{year} ALT_{alt}.pdf",
+                f"EscalaDeRodizio_ZP17_{month}-{year}- ALT_{alt}.pdf",
+                f"EscalaDeRodizio_ZP17_{month}-{year} ALT_{alt:02d}.pdf",
+                f"EscalaDeRodizio_ZP17_{month}-{year} ALT {alt}.pdf",
+            ))
+        for name in names:
+            url = base + urllib.parse.quote(name)
+            key_item = identify("Escala de Rodizio Unica ZP-17", url)
+            if not key_item or any(key[:3] == key_item for key in found):
+                continue
+            try:
+                data = fetch(url)
+            except (HTTPError, URLError, TimeoutError):
+                continue
+            if data.startswith(b"%PDF"):
+                add_candidate(found, {"year": key_item[0], "month": key_item[1], "version": key_item[2], "url": url, "label": "PDF oficial localizado por verificacao mensal"})
 
 
 def version_rank(value):
