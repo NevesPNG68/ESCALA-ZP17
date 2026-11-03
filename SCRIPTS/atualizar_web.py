@@ -35,6 +35,8 @@ HEADERS = {
     "PENDENCIAS": ["ID_PENDENCIA", "COMPETENCIA", "VERSAO", "ARQUIVO", "PAGINA", "TRECHO_ORIGINAL", "CAMPO_AFETADO", "MOTIVO", "SUGESTAO_DE_REVISAO", "STATUS_REVISAO"],
 }
 KNOWN_URLS = (
+    # Publicado pela CPPR em 02/11/2026; link oficial de novembro.
+    "https://assets.marinha.mil.br/cppr/sites/www.marinha.mil.br.cppr/files/EscalaDeRodizio_ZP17_11-2026.pdf",
     # Links conferidos na pagina oficial em 29/10/2026.
     "https://assets.marinha.mil.br/cppr/sites/www.marinha.mil.br.cppr/files/EscalaDeRodizio_ZP17_10-2026%20-%20ALT_02.pdf",
     "https://assets.marinha.mil.br/cppr/sites/www.marinha.mil.br.cppr/files/EscalaDeRodizio_ZP17_10-2026%20-%20ALT_01.pdf",
