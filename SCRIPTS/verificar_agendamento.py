@@ -96,9 +96,13 @@ def write_output(due: bool, reason: str) -> None:
 
 def main() -> int:
     today = datetime.now(LOCAL_TZ).date()
-    competence = next_competence(today)
-    available = competence in published_competences()
-    due, reason = is_due(today, last_checked_date(), available)
+    published = published_competences()
+    current_competence = f"{today.year}-{today.month:02d}"
+    if today.year == TARGET_YEAR and current_competence not in published:
+        due, reason = True, "escala do mes atual ausente: consultar diariamente ate importar"
+    else:
+        competence = next_competence(today)
+        due, reason = is_due(today, last_checked_date(), competence in published)
     write_output(due, reason)
     print(f"AGENDAMENTO: {'EXECUTAR' if due else 'PULAR'} | {today.isoformat()} | {reason}")
     return 0
